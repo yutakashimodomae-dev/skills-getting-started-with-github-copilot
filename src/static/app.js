@@ -25,9 +25,33 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <h5>Participants:</h5>
+            <ul class="participants-list">
+              ${details.participants.length > 0 
+                ? details.participants.map(participant => `<li>${participant} <button class='delete-btn' data-participant='${participant}'>🗑️</button></li>`).join('')
+                : '<li class="no-participants">No participants yet</li>'
+              }
+            </ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
+
+        // Add delete button event listeners
+        const deleteBtn = activityCard.querySelectorAll('.delete-btn');
+        deleteBtn.forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const participant = e.target.dataset.participant;
+            // Call API to unregister participant
+            const response = await fetch(`/unregister?participant=${participant}`, { method: 'DELETE' });
+            if (response.ok) {
+              fetchActivities(); // Refresh activities
+            } else {
+              console.error('Failed to unregister participant');
+            }
+          });
+        });
 
         // Add option to select dropdown
         const option = document.createElement("option");
@@ -62,6 +86,9 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Clear and reload activities to reflect the new signup
+        activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
